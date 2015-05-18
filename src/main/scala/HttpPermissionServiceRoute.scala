@@ -55,8 +55,8 @@ trait HttpPermissionServiceRoute extends HttpService {
 
             }.mapTo[Ack]) {
               case Success(ack) ⇒ ack match {
-                case SuccessAck(repoId) ⇒
-                  complete(repoId)
+                case SuccessAck(message) ⇒
+                  complete(message)
               }
               case Failure(e) ⇒
                 complete(e.getMessage)

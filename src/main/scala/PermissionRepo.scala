@@ -5,6 +5,7 @@
 import akka.actor._
 import akka.contrib.pattern.ShardRegion
 import akka.persistence._
+import akka.pattern.{ ask }
 import util._
 
 object PermissionRepo {
@@ -19,7 +20,7 @@ object PermissionRepo {
 
   sealed trait Ack
 
-  case class SuccessAck(repoId: String) extends Ack
+  case class SuccessAck(message: String) extends Ack
 
   sealed trait Event
 
@@ -45,29 +46,21 @@ class PermissionRepo(userListingRegion: ActorRef) extends PersistentActor with I
 
   override def persistenceId = s"${self.path.parent.name}-${self.path.name}".logInfo(_.toString)
 
-  case class ProcessedCommand(event: Option[Event], ack: Ack, newReceive: Option[Receive])
-
-  def handleProcessedCommand(originSender: ActorRef, event: Option[Event], ack: Ack) = {
-    event.fold(sender() ! ack) {
-      persist(_) { evt =>
-        updateState(evt)
-        originSender ! ack
-      }
-    }
-  }
-
   var state: Map[String, Map[(String, String), Long]] = Map.empty
 
   def updateState(event: Event) = event match {
     case Appended(user, path, operation, dueDate) =>
-      userListingRegion ! event
       state += (user -> state.getOrElse(user, Map.empty).+((path, operation) -> dueDate))
   }
 
   val receiveCommand: Receive = {
-    case c @ Append(user, path, operation, dueDate) =>
-      c.logInfo(_.toString)
-      handleProcessedCommand(sender(), Some(Appended(user, path, operation, dueDate)), SuccessAck(c.repoId))
+    case Append(user, path, operation, dueDate) =>
+      val originSender = sender()
+      persist(Appended(user, path, operation, dueDate)) { evt =>
+        log.info(s"'${evt}' has been persisted @ ${persistenceId}")
+        updateState(evt)
+        userListingRegion ! UserListing.Sync(originSender, evt)
+      }
   }
 
   val receiveRecover: Receive = {
