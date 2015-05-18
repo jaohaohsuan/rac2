@@ -7,13 +7,15 @@ import akka.actor._
 import akka.persistence._
 import util._
 
-import PermissionRepo._
+import PermissionRepo.{ Event, Appended, SuccessAck }
 
 object UserListing {
 
   case class GetUsers(path: String)
 
-  case class Sync(originSender: ActorRef, event: Event)
+  case class Sync(event: Event)
+
+  case class UserPermission(user: String, operation: String, dueDate: String)
 
   def props = Props[UserListing]
 
@@ -21,12 +23,12 @@ object UserListing {
 
   val idExtractor: ShardRegion.IdExtractor = {
     case m @ GetUsers(path) => (path.take(1), m)
-    case m @ Sync(_, e: Appended) => (e.path.take(1), m)
+    case m @ Sync(e: Appended) => (e.path.take(1), m)
   }
 
   val shardResolver: ShardRegion.ShardResolver = {
     case GetUsers(path) => math.abs(path.take(1).hashCode) % 100 toString
-    case m @ Sync(_, e: Appended) => math.abs(e.path.take(1).hashCode) % 100 toString
+    case m @ Sync(e: Appended) => math.abs(e.path.take(1).hashCode) % 100 toString
   }
 
 }
@@ -41,18 +43,20 @@ class UserListing extends PersistentActor with ImplicitActorLogging {
 
   def updateState(event: Event): Unit = event match {
     case Appended(user, path, operation, dueDate) =>
-      state += (path -> state.getOrElse(user, Map.empty).+(user -> (operation, dueDate)))
+      state += (path -> state.getOrElse(path, Map.empty).+(user -> (operation, dueDate)))
   }
 
   val receiveCommand: Receive = {
-    case Sync(originSender, e) =>
+    case Sync(e) =>
       persist(e) { evt =>
         log.info(s"'${evt}' has been persisted @ ${persistenceId}")
         updateState(evt)
-        originSender ! SuccessAck("OK")
+        sender() ! true
       }
     case GetUsers(path) =>
-      sender() ! state.getOrElse(path, Map.empty)
+      sender() ! state.getOrElse(path, Map.empty).map {
+        case (user, (operation, dueDate)) => UserPermission(user, operation, dueDate.toString)
+      }.toList
     case other =>
       other.logInfo("unknown message received: " + _.toString)
   }
@@ -61,7 +65,6 @@ class UserListing extends PersistentActor with ImplicitActorLogging {
     case e: Appended =>
       updateState(e)
     case SnapshotOffer(_, snapshot) =>
-
   }
 
 }

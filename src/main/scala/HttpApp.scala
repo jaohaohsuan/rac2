@@ -8,14 +8,15 @@ import spray.can.Http
 import com.typesafe.config.ConfigFactory
 import akka.io.IO
 import akka.util.Timeout
+import akka.contrib.pattern.{ ClusterSingletonProxy }
 
 import scala.concurrent.duration._
 
-class PermissionHttpActor(permissionRepo: ActorRef, userListing: ActorRef) extends HttpServiceActor with HttpPermissionServiceRoute {
+class PermissionHttpActor(permissionRepo: ActorRef, userListing: ActorRef, pathListing: ActorRef) extends HttpServiceActor with HttpPermissionServiceRoute {
 
   implicit val executionContext = context.dispatcher
 
-  def receive = runRoute(route(permissionRepo))
+  def receive = runRoute(route(permissionRepo, userListing, pathListing))
 }
 
 object HttpApp extends App {
@@ -43,9 +44,9 @@ object HttpApp extends App {
 
   implicit val system = ActorSystem("ClusterSystem", config)
 
-  val (permissionRepo, userListing) = ClusterBoot.boot(true)(system)
+  val (permissionRepo, userListing, pathListing) = ClusterBoot.boot(true)(system)
 
-  val service = system.actorOf(Props(classOf[PermissionHttpActor], permissionRepo, userListing), "http-actor")
+  val service = system.actorOf(Props(classOf[PermissionHttpActor], permissionRepo, userListing, pathListing), "http-actor")
 
   implicit val timeout = Timeout(5.seconds)
 

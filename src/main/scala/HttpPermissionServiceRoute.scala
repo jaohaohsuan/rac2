@@ -21,7 +21,9 @@ trait HttpPermissionServiceRoute extends HttpService {
 
   import util.MarshallingSupport._
 
-  import PermissionRepo._
+  import PermissionRepo.{ Append, Ack, SuccessAck, Get, Permission }
+  import UserListing.{ GetUsers, UserPermission }
+  import PathListing.{ GetPaths }
 
   implicit val executionContext: ExecutionContext
   implicit val timeout = Timeout(30 seconds)
@@ -39,7 +41,7 @@ trait HttpPermissionServiceRoute extends HttpService {
       complete(BadRequest, e.toString)
   }
 
-  def route(repoRegion: ActorRef) = {
+  def route(repoRegion: ActorRef, userListingRegion: ActorRef, pathListing: ActorRef) = {
     post {
       pathPrefix("permission" / Segments) { segments ⇒
         entity(as[Register]) { o =>
@@ -68,25 +70,35 @@ trait HttpPermissionServiceRoute extends HttpService {
     } ~
       get {
         pathPrefix("permission") {
-          //          pathEnd {
-          //            useAccessorFirstCharAsRepoId {
-          //              case (repoId, user) => {
-          //                onComplete((accesserQuery ? QueryIndividualPermissions(repoId, accesser)).mapTo[IndividualPermissionsResponse]) {
-          //                  case Success(s) ⇒
-          //                    complete(s)
-          //                  case Failure(e) ⇒
-          //                    complete(e.toString)
-          //                }
-          //
-          //              }
-          //            }
-          //          } ~
-          path(Segments) { segments =>
-            complete(segments)
-          }
+          pathEnd {
+            useAccessorFirstCharAsRepoId {
+              case (repoId, user) => {
+                onComplete((repoRegion ? Get(user)).mapTo[List[Permission]]) {
+                  case Success(s) ⇒
+                    complete(s)
+                  case Failure(e) ⇒
+                    complete(InternalServerError, e.getMessage)
+                }
+              }
+            } ~ pathEnd {
+              onComplete((pathListing ? GetPaths).mapTo[Set[String]]) {
+                case Success(s) =>
+                  complete(s)
+                case Failure(e) =>
+                  complete(InternalServerError, e.getMessage)
+              }
+            }
+          } ~
+            path(Segments) { segments =>
+              onComplete((userListingRegion ? GetUsers(segments.mkString("/"))).mapTo[List[UserPermission]]) {
+                case Success(s) =>
+                  complete(s)
+                case Failure(e) =>
+                  complete(InternalServerError, e.getMessage)
+              }
+            }
         }
       }
-
   }
 
 }
