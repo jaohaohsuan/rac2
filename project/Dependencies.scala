@@ -4,7 +4,7 @@ import sbt._
 object Version {
   val akka         = "2.3.11"
   val logback      = "1.1.2"
-  val scala        = "2.11.6"
+  val scala        = "2.11.5"
   val scalaTest    = "2.2.1"
   val spray        = "1.3.2"
 }
@@ -55,7 +55,6 @@ object Dependencies {
     elastic4s,
     nscalaTime,
     hashids,
-    persistenceShardInmemory,
     json4sNative,
     akkaTestkit % "test",
     akkaMultiNodeTestkit % "test",
