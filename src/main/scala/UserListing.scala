@@ -39,11 +39,11 @@ class UserListing extends PersistentActor with ImplicitActorLogging {
 
   override def persistenceId = s"${self.path.parent.name}-${self.path.name}".logInfo(_.toString)
 
-  var state: Map[String, Map[String, (String, Long)]] = Map.empty
+  var state: Map[String, Set[UserPermission]] = Map.empty
 
   def updateState(event: Event): Unit = event match {
     case Appended(user, path, operation, dueDate) =>
-      state += (path -> state.getOrElse(path, Map.empty).+(user -> (operation, dueDate)))
+      state += (path -> state.getOrElse(path, Set.empty).+(UserPermission(user, operation, dueDate.toString)))
   }
 
   val receiveCommand: Receive = {
@@ -54,9 +54,7 @@ class UserListing extends PersistentActor with ImplicitActorLogging {
         sender() ! true
       }
     case GetUsers(path) =>
-      sender() ! state.getOrElse(path, Map.empty).map {
-        case (user, (operation, dueDate)) => UserPermission(user, operation, dueDate.toString)
-      }.toList
+      sender() ! state.getOrElse(path, Set.empty)
     case other =>
       other.logInfo("unknown message received: " + _.toString)
   }

@@ -30,7 +30,7 @@ object PermissionRepo {
     def repoId = user.take(1)
   }
 
-  case class Permission(path: String, operation: String, dueDate: String)
+  case class PathPermission(path: String, operation: String, dueDate: String)
 
   sealed trait Ack
 
@@ -91,7 +91,7 @@ class PermissionRepo(userListingRegion: ActorRef, pathListing: ActorRef) extends
       }
     case Get(user) =>
       sender() ! state.getOrElse(user, Map.empty).map {
-        case ((path, operation), dueDate) => Permission(path, operation, dueDate.toString)
+        case ((path, operation), dueDate) => PathPermission(path, operation, dueDate.toString)
       }.toList
   }
 

@@ -21,7 +21,7 @@ trait HttpPermissionServiceRoute extends HttpService {
 
   import util.MarshallingSupport._
 
-  import PermissionRepo.{ Append, Ack, SuccessAck, Get, Permission }
+  import PermissionRepo.{ Append, Ack, SuccessAck, Get, PathPermission }
   import UserListing.{ GetUsers, UserPermission }
   import PathListing.{ GetPaths }
 
@@ -73,7 +73,7 @@ trait HttpPermissionServiceRoute extends HttpService {
           pathEnd {
             useAccessorFirstCharAsRepoId {
               case (repoId, user) => {
-                onComplete((repoRegion ? Get(user)).mapTo[List[Permission]]) {
+                onComplete((repoRegion ? Get(user)).mapTo[List[PathPermission]]) {
                   case Success(s) ⇒
                     complete(s)
                   case Failure(e) ⇒
@@ -90,7 +90,7 @@ trait HttpPermissionServiceRoute extends HttpService {
             }
           } ~
             path(Segments) { segments =>
-              onComplete((userListingRegion ? GetUsers(segments.mkString("/"))).mapTo[List[UserPermission]]) {
+              onComplete((userListingRegion ? GetUsers(segments.mkString("/"))).mapTo[Set[UserPermission]]) {
                 case Success(s) =>
                   complete(s)
                 case Failure(e) =>
