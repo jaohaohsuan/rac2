@@ -12,11 +12,13 @@ import akka.contrib.pattern.{ ClusterSingletonProxy }
 
 import scala.concurrent.duration._
 
-class PermissionHttpActor(permissionRepo: ActorRef, userListing: ActorRef, pathListing: ActorRef) extends HttpServiceActor with HttpPermissionServiceRoute {
+class ServiceActor(permissionRepo: ActorRef, userListing: ActorRef, pathListing: ActorRef) extends HttpServiceActor
+    with HttpPermissionServiceRoute
+    with HttpQueryTemplateServiceRoute {
 
   implicit val executionContext = context.dispatcher
 
-  def receive = runRoute(route(permissionRepo, userListing, pathListing))
+  def receive = runRoute(permissionRoute(permissionRepo, userListing, pathListing) ~ queryTemplateRoute)
 }
 
 object HttpApp extends App {
@@ -46,7 +48,7 @@ object HttpApp extends App {
 
   val (permissionRepo, userListing, pathListing) = ClusterBoot.boot(true)(system)
 
-  val service = system.actorOf(Props(classOf[PermissionHttpActor], permissionRepo, userListing, pathListing), "http-actor")
+  val service = system.actorOf(Props(classOf[ServiceActor], permissionRepo, userListing, pathListing), "http-actor")
 
   implicit val timeout = Timeout(5.seconds)
 

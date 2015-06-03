@@ -41,7 +41,7 @@ trait HttpPermissionServiceRoute extends HttpService {
       complete(BadRequest, e.toString)
   }
 
-  def route(repoRegion: ActorRef, userListingRegion: ActorRef, pathListing: ActorRef) = {
+  def permissionRoute(repoRegion: ActorRef, userListingRegion: ActorRef, pathListing: ActorRef) = {
     post {
       pathPrefix("permission" / Segments) { segments ⇒
         entity(as[Register]) { o =>

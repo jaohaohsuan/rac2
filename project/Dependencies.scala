@@ -24,13 +24,12 @@ object Library {
   val logbackClassic           = "ch.qos.logback"         %  "logback-classic"                  % Version.logback
   val scalaTest                = "org.scalatest"          %% "scalatest"                        % Version.scalaTest
   val commonsIo                = "commons-io"             %  "commons-io"                       % "2.4"
-  val elastic4s                = "com.sksamuel.elastic4s" %% "elastic4s"                        % "1.5.6"
+  val elastic4s                = "com.sksamuel.elastic4s" %% "elastic4s"                        % "1.5.10"
   val nscalaTime               = "com.github.nscala-time" %% "nscala-time"                      % "2.0.0"
   val hashids                  = "com.timesprint"         %% "hashids-scala"                    % "1.0.0"
   val persistenceShardInmemory = "com.github.jdgoldie"    %% "akka-persistence-shared-inmemory" % "1.0.16"
   val json4sNative             = "org.json4s"             %% "json4s-native"                    % "3.2.10"
-
-
+  val scalaJsonCollection      = "net.hamnaberg.rest"     %% "scala-json-collection"            % "2.3"
 }
 
 object Dependencies {
@@ -56,6 +55,7 @@ object Dependencies {
     nscalaTime,
     hashids,
     json4sNative,
+    scalaJsonCollection,
     akkaTestkit % "test",
     akkaMultiNodeTestkit % "test",
     sprayTestkit % "test",
