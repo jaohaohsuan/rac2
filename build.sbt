@@ -12,7 +12,7 @@ libraryDependencies ++= Dependencies.cqrsTemplate
 val project = Project(
   id = "rac",
   base = file("."),
-  settings = Project.defaultSettings ++ Common.settings  ++ SbtMultiJvm.multiJvmSettings ++ Seq(
+  settings = Common.settings  ++ SbtMultiJvm.multiJvmSettings ++ Seq(
     // make sure that MultiJvm test are compiled by the default test compilation
     compile in MultiJvm <<= (compile in MultiJvm) triggeredBy (compile in Test),
     // disable parallel tests
@@ -32,3 +32,6 @@ val project = Project(
     }
   )
 ) configs (MultiJvm)
+
+
+fork in run := true

@@ -30,6 +30,7 @@ object Library {
   val persistenceShardInmemory = "com.github.jdgoldie"    %% "akka-persistence-shared-inmemory" % "1.0.16"
   val json4sNative             = "org.json4s"             %% "json4s-native"                    % "3.2.10"
   val scalaJsonCollection      = "net.hamnaberg.rest"     %% "scala-json-collection"            % "2.3"
+  val sigar                    = "org.fusesource"         % "sigar"                             % "1.6.4"
 }
 
 object Dependencies {
@@ -56,6 +57,7 @@ object Dependencies {
     hashids,
     json4sNative,
     scalaJsonCollection,
+    sigar,
     akkaTestkit % "test",
     akkaMultiNodeTestkit % "test",
     sprayTestkit % "test",
